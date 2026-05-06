@@ -7,8 +7,5 @@ struct DeleteKeyCommand : RegAppCommandBase<DeleteKeyCommand> {
 
 	bool Execute() override;
 	bool Undo() override;
-
-private:
-	CString _savePath;
 };
 

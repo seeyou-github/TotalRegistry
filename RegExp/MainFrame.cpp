@@ -331,8 +331,6 @@ LRESULT CMainFrame::OnDrawItem(UINT, WPARAM, LPARAM lp, BOOL& handled) {
 }
 
 LRESULT CMainFrame::OnCreate(UINT, WPARAM, LPARAM, BOOL&) {
-	::RegDeleteTree(HKEY_CURRENT_USER, DeletedPathBackup.Left(DeletedPathBackup.GetLength() - 1));
-
 	::ChangeWindowMessageFilterEx(m_hWnd, WM_COPYDATA, MSGFLT_ALLOW, nullptr);
 
 	m_Locations.Load(L"Software\\ScorpioSoftware\\TotalRegistry");

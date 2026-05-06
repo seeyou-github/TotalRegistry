@@ -1,7 +1,5 @@
 #pragma once
 
-const CString DeletedPathBackup(L"SOFTWARE\\ScorpioSoftware\\RegExp\\__Deleted__\\");
-
 struct AppCommand abstract {
 	explicit AppCommand(const CString& name) : _cmdname(name) {}
 
