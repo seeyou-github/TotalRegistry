@@ -1,0 +1,81 @@
+name: Build portable
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-windows-x64:
+    name: Windows x64 portable
+    runs-on: windows-2025-vs2026
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: '[18.0,19.0)'
+
+      - name: Install native dependencies
+        shell: pwsh
+        run: |
+          $vcpkgRoot = if ($env:VCPKG_INSTALLATION_ROOT) { $env:VCPKG_INSTALLATION_ROOT } else { 'C:\vcpkg' }
+          $vcpkg = Join-Path $vcpkgRoot 'vcpkg.exe'
+          if (-not (Test-Path $vcpkg)) {
+            $vcpkg = 'vcpkg'
+          }
+
+          & $vcpkg install `
+            detours:x64-windows-static `
+            wil:x64-windows-static `
+            wtl:x64-windows-static
+          & $vcpkg integrate install
+
+      - name: Build
+        shell: pwsh
+        run: |
+          msbuild TotalRegistry.sln `
+            /m `
+            /restore `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:VcpkgEnabled=true `
+            /p:VcpkgTriplet=x64-windows-static `
+            /p:WindowsTargetPlatformVersion=10.0.26100.0
+
+      - name: Stage portable files
+        shell: pwsh
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'TotalReg-portable'
+          New-Item -ItemType Directory -Force -Path $stage | Out-Null
+
+          $exe = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter TotalReg.exe |
+            Where-Object { $_.FullName -match '\\x64\\Release\\' } |
+            Select-Object -First 1
+
+          if (-not $exe) {
+            throw 'TotalReg.exe was not found after build.'
+          }
+
+          Copy-Item -LiteralPath $exe.FullName -Destination $stage
+
+          $pdb = Join-Path $exe.DirectoryName 'TotalReg.pdb'
+          if (Test-Path $pdb) {
+            Copy-Item -LiteralPath $pdb -Destination $stage
+          }
+
+          Copy-Item -LiteralPath README.md -Destination $stage
+          Copy-Item -LiteralPath LICENSE -Destination $stage
+
+          Compress-Archive -Path (Join-Path $stage '*') -DestinationPath TotalReg-portable-win-x64.zip -Force
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TotalReg-portable-win-x64
+          path: TotalReg-portable-win-x64.zip
+          if-no-files-found: error
