@@ -25,7 +25,6 @@
 #include "LoadHiveDlg.h"
 #include "GotoKeyDlg.h"
 #include "ThemeHelper.h"
-#include "ConnectRegistryDlg.h"
 #include "Helpers.h"
 #include "RegExportImport.h"
 #include "ImageIconCache.h"
@@ -444,7 +443,7 @@ LRESULT CMainFrame::OnCreate(UINT, WPARAM, LPARAM, BOOL&) {
 	UINT icons[] = {
 		IDR_MAINFRAME, IDI_COMPUTER, IDI_FOLDER, IDI_FOLDER_CLOSED, IDI_FOLDER_LINK,
 		IDI_FOLDER_ACCESSDENIED, IDI_HIVE, IDI_HIVE_ACCESSDENIED, IDI_FOLDER_UP, IDI_BINARY,
-		IDI_TEXT, IDI_REAL_REG, IDI_NUM4, IDI_NUM8, IDI_REGREMOTE,
+		IDI_TEXT, IDI_REAL_REG, IDI_NUM4, IDI_NUM8,
 		IDI_BOOKMARKS,
 	};
 	for (auto icon : icons)
@@ -622,15 +621,6 @@ LRESULT CMainFrame::OnBuildTree(UINT, WPARAM, LPARAM, BOOL&) {
 
 
 	if (!m_StartKey.IsEmpty()) {
-		if (m_StartKey.Left(2) == L"\\\\") {
-			int start = m_StartKey.Find(L"\\", 2);
-			if (start == -1)
-				start = m_StartKey.GetLength();
-
-			auto remotename = m_StartKey.Mid(2, start - 2);
-			ConnectRemoteRegistry(remotename);
-		}
-
 		auto hItem = GotoKey(m_StartKey);
 		if (!hItem) {
 			AtlMessageBox(m_hWnd, (PCWSTR)(L"Failed to locate key " + m_StartKey), IDS_APP_TITLE, MB_ICONWARNING);
@@ -862,9 +852,9 @@ LRESULT CMainFrame::OnTreeContextMenu(int, LPNMHDR hdr, BOOL&) {
 		int subMenu = -1;
 		auto type = GetNodeData(hItem);
 		if ((type & NodeType::Bookmark) == NodeType::Bookmark)
-			subMenu = 7;
+			subMenu = 6;
 		if (subMenu < 0)
-			subMenu = (type & NodeType::RemoteRegistry) == NodeType::RemoteRegistry ? 5 : 0;
+			subMenu = 0;
 
 		auto hMenu = menu.GetSubMenu(subMenu);
 		if ((type & NodeType::Hive) == NodeType::Hive) {
@@ -1533,26 +1523,6 @@ LRESULT CMainFrame::OnViewStatusBar(WORD, WORD id, HWND, BOOL&) {
 	return 0;
 }
 
-LRESULT CMainFrame::OnConnectRemote(WORD, WORD, HWND, BOOL&) {
-	CConnectRegistryDlg dlg(this);
-	if (dlg.DoModal() == IDOK) {
-		ConnectRemoteRegistry(dlg.GetComputerName());
-	}
-	return 0;
-}
-
-LRESULT CMainFrame::OnDisconnectRemote(WORD, WORD, HWND, BOOL&) {
-	auto hItem = m_Tree.GetSelectedItem();
-	if (GetNodeData(hItem) != NodeType::RemoteRegistry)
-		return 0;
-
-	CString name;
-	m_Tree.GetItemText(hItem, name);
-	if (Registry::Disconnect(name))
-		m_Tree.DeleteItem(hItem);
-	return 0;
-}
-
 LRESULT CMainFrame::OnOptionsFont(WORD, WORD, HWND, BOOL&) {
 	LOGFONT lf;
 	CFontHandle(m_List.GetFont()).GetLogFont(lf);
@@ -1755,28 +1725,6 @@ LRESULT CMainFrame::OnListEndEdit(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled
 	return rv;
 }
 
-void CMainFrame::ConnectRemoteRegistry(CString hostname) {
-	hostname = hostname.MakeUpper();
-
-	if (TreeHelper(m_Tree).FindChild(m_Tree.GetRootItem(), hostname)) {
-		AtlMessageBox(m_hWnd, (PCWSTR)(L"Already connected to computer '" + hostname + L"'. Disconnect first if you'd like to reconnect."),
-			IDS_APP_TITLE, MB_ICONWARNING);
-		return;
-	}
-	CWaitCursor wait;
-	if (!Registry::ConnectRegistry(hostname)) {
-		DisplayError(L"Failed to connect to remote computer");
-		return;
-	}
-
-	auto hComputer = InsertTreeItem(hostname, 14, NodeType::RemoteRegistry, TVI_ROOT, TVI_LAST);
-	auto Item = InsertKeyItem(hComputer, L"HKEY_LOCAL_MACHINE", NodeType::Predefined | NodeType::Key);
-	Item = InsertKeyItem(hComputer, L"HKEY_USERS", NodeType::Predefined | NodeType::Key);
-	m_Tree.Expand(hComputer, TVE_EXPAND);
-	m_Tree.SelectItem(hComputer);
-	m_Tree.EnsureVisible(hComputer);
-}
-
 void CMainFrame::InitCommandBar() {
 	AddMenu(GetMenu());
 
@@ -1809,7 +1757,6 @@ void CMainFrame::InitCommandBar() {
 		{ ID_KEY_PROPERTIES, IDI_PROPERTIES },
 		{ ID_FILE_LOADHIVE, IDI_FOLDER_LOAD },
 		{ ID_KEY_GOTO, IDI_GOTO },
-		{ ID_FILE_CONNECTREMOTEREGISTRY, IDI_REGREMOTE },
 		{ ID_NEW_DWORDVALUE, IDI_NUM4 },
 		{ ID_NEW_BINARYVALUE, IDI_BINARY },
 		{ ID_NEW_QWORDVALUE, IDI_NUM8 },
@@ -1944,7 +1891,7 @@ void CMainFrame::InitTree() {
 	DWORD len = _countof(name);
 	::GetComputerName(name, &len);
 	m_hLocalRoot = InsertTreeItem(name + CString(L" (Local)"), 1, NodeType::Machine, TVI_ROOT, TVI_LAST);
-	m_hBookmarks = InsertTreeItem(L"Bookmarks", 15, NodeType::Bookmarks, m_hLocalRoot, TVI_LAST);
+	m_hBookmarks = InsertTreeItem(L"Bookmarks", 14, NodeType::Bookmarks, m_hLocalRoot, TVI_LAST);
 	for (auto& bm : AppSettings::Get().Bookmarks()) {
 		InsertKeyItem(m_hBookmarks, bm.c_str(), NodeType::Key | NodeType::Bookmark);
 	}
@@ -1974,11 +1921,6 @@ CString CMainFrame::GetFullNodePath(HTREEITEM hItem) const {
 	path.TrimRight(L"\\");
 	if (path.Left(8) == L"REGISTRY")
 		path = L"\\" + path;
-	if ((GetNodeData(hItem) & NodeType::RemoteRegistry) == NodeType::RemoteRegistry) {
-		CString name;
-		m_Tree.GetItemText(hItem, name);
-		path = L"\\\\" + name + (path.IsEmpty() ? L"" : L"\\") + path;
-	}
 	return path;
 }
 
@@ -2641,7 +2583,6 @@ void CMainFrame::UpdateUI() {
 		UIEnable(ID_KEY_PERMISSIONS, FALSE);
 		UIEnable(ID_KEY_PROPERTIES, FALSE);
 	}
-	UIEnable(ID_FILE_DISCONNECT, node == NodeType::RemoteRegistry);
 	UIEnable(ID_KEY_JUMPTOHIVEFILE, (GetNodeData(m_Tree.GetSelectedItem()) & NodeType::Hive) == NodeType::Hive);
 
 	for (auto id = ID_NEW_DWORDVALUE; id <= ID_NEW_BINARYVALUE; id++)
@@ -2699,7 +2640,7 @@ void CMainFrame::UpdateList(bool newLocation) {
 	if (hItem == m_hRealReg)
 		m_CurrentKey.Attach(Registry::OpenRealRegistryKey());
 
-	if (AppSettings::Get().ShowKeysInList() && (hItem == m_hStdReg || hItem == m_hRealReg || (GetNodeData(hItem) & NodeType::RemoteRegistry) == NodeType::RemoteRegistry)) {
+	if (AppSettings::Get().ShowKeysInList() && (hItem == m_hStdReg || hItem == m_hRealReg)) {
 		// special case for root of registry
 		for (hItem = m_Tree.GetChildItem(hItem); hItem; hItem = m_Tree.GetNextSiblingItem(hItem)) {
 			RegistryItem item;

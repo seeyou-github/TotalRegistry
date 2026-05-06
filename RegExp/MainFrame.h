@@ -31,7 +31,6 @@ enum class NodeType {
 	Loaded = 0x100,
 	Machine = 0x200,
 	AccessDenied = 0x400,
-	RemoteRegistry = 0x800,
 	Bookmark = 0x1000,
 	Bookmarks = 0x2000,
 };
@@ -147,8 +146,6 @@ public:
 		COMMAND_ID_HANDLER(ID_EDIT_ADDRESSBAR, OnEditAddressBar)
 		COMMAND_ID_HANDLER(ID_FILE_EXPORT, OnExport)
 		COMMAND_ID_HANDLER(ID_FILE_IMPORT, OnImport)
-		COMMAND_ID_HANDLER(ID_FILE_CONNECTREMOTEREGISTRY, OnConnectRemote)
-		COMMAND_ID_HANDLER(ID_FILE_DISCONNECT, OnDisconnectRemote)
 		COMMAND_ID_HANDLER(ID_APP_ABOUT, OnAbout)
 		COMMAND_ID_HANDLER(ID_OPTIONS_REPLACEREGEDIT, OnReplaceRegEdit)
 		COMMAND_ID_HANDLER(ID_OPTIONS_DARKMODE, OnDarkMode)
@@ -283,8 +280,6 @@ private:
 	LRESULT OnViewAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnViewToolBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnViewStatusBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-	LRESULT OnConnectRemote(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-	LRESULT OnDisconnectRemote(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnOptionsFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnRestoreDefaultFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnShowKeysHandles(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
@@ -299,7 +294,6 @@ private:
 	LRESULT OnViewSelectAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnGotoHive(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 
-	void ConnectRemoteRegistry(CString hostname);
 	void InitCommandBar();
 	void InitToolBar(CToolBarCtrl& tb, int size = 24);
 	CTreeItem InsertTreeItem(PCWSTR text, int image, NodeType type, HTREEITEM hParent = TVI_ROOT, HTREEITEM hAfter = TVI_SORT);

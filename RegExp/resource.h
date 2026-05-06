@@ -62,8 +62,6 @@
 #define IDD_TEST                        170
 #define IDI_ICON1                       171
 #define IDI_CHECK                       171
-#define IDI_REGREMOTE                   172
-#define IDD_CONNECTREG                  173
 #define IDD_HANDLES                     174
 #define IDD_QUICKFILTER                 175
 #define IDI_BOOKMARKS                   177
@@ -114,7 +112,6 @@
 #define IDC_BROWSE                      1041
 #define IDC_MACHINE                     1042
 #define IDC_USERS                       1043
-#define IDC_LINK                        1045
 #define IDC_HANDLECOUNT                 1050
 #define IDC_FILTER                      1051
 #define IDC_CLEAR                       1052
@@ -180,8 +177,6 @@
 #define ID_VIEW_ADDRESSBAR              32860
 #define ID_EDIT_ADDRESSBAR              32861
 #define ID_BOOKMARKS_BOOKMARKS          32864
-#define ID_FILE_CONNECTREMOTEREGISTRY   32865
-#define ID_FILE_DISCONNECT              32866
 #define ID_LOCATIONS_MANAGE             32867
 #define ID_OPTIONS_FONT                 32868
 #define ID_OPTIONS_RESTOREDEFAULTFONT   32869

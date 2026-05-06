@@ -290,7 +290,7 @@
       <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
     <PostBuildEvent>
-      <Command>signtool sign /a /n Scorpio /t http://timestamp.digicert.com /fd sha256 $(TargetPath)</Command>
+      <Command>signtool sign /a /n Scorpio /fd sha256 $(TargetPath)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -357,7 +357,6 @@
     <ClInclude Include="BinaryValueDlg.h" />
     <ClInclude Include="ChangeValueCommand.h" />
     <ClInclude Include="CommandManager.h" />
-    <ClInclude Include="ConnectRegistryDlg.h" />
     <ClInclude Include="CopyKeyCommand.h" />
     <ClInclude Include="CopyValueCommand.h" />
     <ClInclude Include="CreateKeyCommand.h" />
@@ -407,7 +406,6 @@
     <ClCompile Include="BinaryValueDlg.cpp" />
     <ClCompile Include="ChangeValueCommand.cpp" />
     <ClCompile Include="CommandManager.cpp" />
-    <ClCompile Include="ConnectRegistryDlg.cpp" />
     <ClCompile Include="CopyKeyCommand.cpp" />
     <ClCompile Include="CopyValueCommand.cpp" />
     <ClCompile Include="CreateKeyCommand.cpp" />
@@ -498,7 +496,6 @@
     <Image Include="Icons\RegExp.ico" />
     <Image Include="Icons\registry.ico" />
     <Image Include="Icons\registrysearch.ico" />
-    <Image Include="Icons\regremote.ico" />
     <Image Include="Icons\rename.ico" />
     <Image Include="Icons\shield.ico" />
     <Image Include="Icons\text.ico" />

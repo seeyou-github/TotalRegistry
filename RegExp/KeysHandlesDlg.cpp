@@ -28,7 +28,7 @@ bool CKeysHandlesDlg::OnRightClickList(HWND, int row, int col, POINT const& pt) 
 	if (m_List.GetSelectedCount() > 0) {
 		CMenu menu;
 		menu.LoadMenu(IDR_CONTEXT);
-		auto subMenu = menu.GetSubMenu(6);
+		auto subMenu = menu.GetSubMenu(5);
 		auto cmd = (UINT)ShowContextMenu(subMenu, TPM_RETURNCMD, pt.x, pt.y);
 		if (cmd)
 			PostMessage(WM_COMMAND, cmd);

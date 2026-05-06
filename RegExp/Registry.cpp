@@ -96,30 +96,6 @@ RegistryKey Registry::OpenKey(const CString& rawpath, DWORD access, bool* root) 
 
 	auto path = Helpers::NormalizePath(rawpath);
 	RegistryKey key;
-	if (path.Left(2) == L"\\\\") {
-		// remote Registry
-		auto index = path.Find(L"\\", 2);
-		if (index < 0)
-			return key;
-
-		auto name = path.Mid(2, index - 2);
-		auto& rr = _remotes[name];
-		index = path.Find(L"\\HKEY_LOCAL_MACHINE");
-		HKEY hRoot = index >= 0 ? rr.hLocal : rr.hUsers;
-		if (index < 0)
-			index = path.Find(L"\\HKEY_USERS");
-		ATLASSERT(index >= 0);
-		index = path.Find(L"\\", index + 1);
-		if (index < 0) {
-			key.Attach(hRoot, false);
-		}
-		else {
-			auto subpath = path.Mid(index + 1);
-			auto error = key.Open(hRoot, subpath, access);
-			::SetLastError(error);
-		}
-		return key;
-	}
 	if (path[0] == L'\\') {
 		// real registry
 		key.Attach(OpenRealRegistryKey(path, access));
@@ -208,40 +184,6 @@ CString Registry::ExpandStrings(const CString& text) {
 	buffer[0] = 0;
 	::ExpandEnvironmentStrings(text, buffer, _countof(buffer));
 	return buffer;
-}
-
-bool Registry::ConnectRegistry(PCWSTR computerName) {
-	HKEY hLocal{ nullptr }, hUsers{ nullptr };
-	auto error = ::RegConnectRegistry(CString(L"\\\\") + computerName, HKEY_LOCAL_MACHINE, &hLocal);
-	if (error == ERROR_SUCCESS)
-		error = ::RegConnectRegistry(CString(L"\\\\") + computerName, HKEY_USERS, &hUsers);
-
-	if (error) {
-		::RegCloseKey(hLocal);
-		::SetLastError(error);
-		return false;
-	}
-	RemoteRegistry rr;
-	rr.hLocal = hLocal;
-	rr.hUsers = hUsers;
-	rr.ComputerName = computerName;
-	_remotes.insert({ computerName, rr });
-	ATLASSERT(IsKeyValid(rr.hLocal));
-	ATLASSERT(IsKeyValid(rr.hUsers));
-
-	return true;
-}
-
-bool Registry::Disconnect(PCWSTR computerName) {
-	auto it = _remotes.find(computerName);
-	if (it == _remotes.end())
-		return false;
-
-	auto& rr = it->second;
-	::RegCloseKey(rr.hLocal);
-	::RegCloseKey(rr.hUsers);
-	_remotes.erase(it);
-	return true;
 }
 
 CString Registry::GetRegTypeAsString(DWORD type) {

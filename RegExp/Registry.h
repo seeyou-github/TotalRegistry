@@ -16,11 +16,6 @@ struct RegistryItem {
 	bool Key : 1 { false };
 };
 
-struct RemoteRegistry {
-	HKEY hLocal, hUsers;
-	CString ComputerName;
-};
-
 const DWORD REG_KEY = 0x1111;
 const DWORD REG_KEY_UP = 0x1112;
 
@@ -54,9 +49,6 @@ struct Registry abstract final {
 	static bool IsKeyLink(HKEY hKey, PCWSTR path, CString& linkPath);
 	static CString ExpandStrings(const CString& text);
 
-	static bool ConnectRegistry(PCWSTR computerName);
-	static bool Disconnect(PCWSTR computerName);
-
 	static const std::vector<Hive>& GetHiveList(bool refresh = false);
 	static bool IsHiveKey(const CString& path);
 	static bool IsKeyValid(HKEY h);
@@ -79,6 +71,5 @@ struct Registry abstract final {
 	};
 
 private:
-	inline static std::map<CString, RemoteRegistry> _remotes;
 	inline static std::vector<Hive> _hives;
 };
